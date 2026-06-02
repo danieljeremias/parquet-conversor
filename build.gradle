@@ -11,9 +11,12 @@ repositories {
 dependencies {
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
     implementation enforcedPlatform("${quarkusPlatformGroupId}:quarkus-amazon-services-bom:${quarkusPlatformVersion}")
-    implementation 'io.quarkus:quarkus-avro'
-    implementation 'io.quarkiverse.amazonservices:quarkus-amazon-s3'
     implementation 'io.quarkus:quarkus-arc'
+    implementation 'org.apache.parquet:parquet-avro:1.17.1'
+    implementation 'org.apache.hadoop:hadoop-common:3.5.0'
+    implementation 'org.apache.hadoop:hadoop-mapreduce-client-core:3.5.0'
+    implementation 'io.quarkiverse.amazonservices:quarkus-amazon-s3'
+    implementation 'software.amazon.awssdk:url-connection-client'
     testImplementation 'io.quarkus:quarkus-junit'
 }
 
@@ -21,8 +24,9 @@ group = 'com.tasy.finops'
 version = '1.0.0-SNAPSHOT'
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 compileJava {
@@ -32,4 +36,9 @@ compileJava {
 
 compileTestJava {
     options.encoding = 'UTF-8'
+}
+
+test {
+    useJUnitPlatform()
+    systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
 }
