@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,9 +44,11 @@ public class ParquetMigrator {
 
         final List<Future<?>> futures = new ArrayList<>();
         final Semaphore semaphore = new Semaphore(64); // Limit to 64 concurrent threads
+        final AtomicInteger total = new AtomicInteger();
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             var request = ListObjectsV2Request.builder().bucket(sourceBucket).prefix(sourcePrefix).build();
             s3.listObjectsV2Paginator(request).stream().forEach(page -> {
+                LOGGER.info("# Processing page with {} objects", page.contents().size());
                 for (var object : page.contents()) {
                     if (isNotParquetFile(object.key())) {
                         continue;
@@ -53,7 +56,6 @@ public class ParquetMigrator {
                     futures.add(executor.submit(() -> {
                         semaphore.acquire();
                         try {
-                            LOGGER.info("### Processing file {}", object.key());
                             transformer.transform(sourceBucket, object.key());
                         } finally {
                             semaphore.release();
@@ -65,12 +67,13 @@ public class ParquetMigrator {
                     try {
                         future.get();
                     } catch (InterruptedException | ExecutionException e) {
-                        LOGGER.error("### Error processing file", e);
                         throw new RuntimeException(e);
                     }
                 }
+                total.addAndGet(page.contents().size());
             });
         }
+        LOGGER.info("# Total {} objects processed", total.get());
     }
 
     private void validateSourceBucket() {
