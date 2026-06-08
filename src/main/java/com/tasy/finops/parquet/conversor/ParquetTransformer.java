@@ -29,7 +29,7 @@ public class ParquetTransformer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ParquetTransformer.class);
 
-    private static final DateTimeFormatter OUTPUT_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
+    private static final DateTimeFormatter OUTPUT_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
             .withZone(java.time.ZoneOffset.UTC);
 
     private final S3Client s3;
